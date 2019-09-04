@@ -1,17 +1,18 @@
 package model.dao;
 
-import java.beans.Statement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
-import model.vo.Cliente;
-import model.vo.Endereco;
-import model.vo.Telefone;
+import model.entity.Cliente;
+import model.entity.Endereco;
+import model.entity.Telefone;
 
 public class ClienteDAO implements BaseDAO<Cliente> {
+
 	public Cliente salvar(Cliente novoCliente) {
 		Connection conexao = Banco.getConnection();
 		String sql = " INSERT INTO CLIENTE(NOME, SOBRENOME, CPF, IDENDERECO) " + " VALUES (?,?,?,?)";

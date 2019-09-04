@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import model.vo.Endereco;
+import model.entity.Endereco;
 
 public class EnderecoDAO implements BaseDAO<Endereco> {
 
@@ -107,7 +107,7 @@ public class EnderecoDAO implements BaseDAO<Endereco> {
 
 	public ArrayList<Endereco> consultarTodos() {
 		Connection conn = Banco.getConnection();
-		String sql = " SELECT Rua, Cep, Estado, Cidade, Numero, Bairro " + " FROM ENDERECO ";
+		String sql = " SELECT id, Rua, Cep, Estado, Cidade, Numero, Bairro " + " FROM ENDERECO ";
 
 		Statement stmt = Banco.getStatement(conn);
 		ArrayList<Endereco> enderecos = new ArrayList<Endereco>();

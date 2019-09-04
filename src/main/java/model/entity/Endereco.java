@@ -1,41 +1,27 @@
-package model.vo;
+package model.entity;
 
 public class Endereco {
+
 	private int id;
 	private String rua;
 	private String cep;
 	private String estado;
 	private String cidade;
-	private String numero;
 	private String bairro;
-
-	@Override
-	public String toString() {
-		return rua + ", " + numero + " , " + bairro + " , " + cidade + " ,  " + cep + " , " + estado;
-	}
+	private String numero;
 
 	public Endereco() {
-		super();
-		// TODO Auto-generated constructor stub
+
 	}
 
-	public Endereco(int id, String rua, String cep, String estado, String cidade, String numero, String bairro) {
+	public Endereco(String rua, String cep, String estado, String cidade, String bairro, String numero) {
 		super();
-		this.id = id;
 		this.rua = rua;
 		this.cep = cep;
 		this.estado = estado;
 		this.cidade = cidade;
-		this.numero = numero;
 		this.bairro = bairro;
-	}
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
+		this.numero = numero;
 	}
 
 	public String getRua() {
@@ -70,14 +56,6 @@ public class Endereco {
 		this.cidade = cidade;
 	}
 
-	public String getNumero() {
-		return numero;
-	}
-
-	public void setNumero(String numero) {
-		this.numero = numero;
-	}
-
 	public String getBairro() {
 		return bairro;
 	}
@@ -86,4 +64,24 @@ public class Endereco {
 		this.bairro = bairro;
 	}
 
+	public String getNumero() {
+		return numero;
+	}
+
+	public void setNumero(String numero) {
+		this.numero = numero;
+	}
+
+	@Override
+	public String toString() {
+		return "Rua " + rua + ", " + numero + ", " + bairro + " - " + cep + " (" + cidade + "/" + estado + ")";
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
 }

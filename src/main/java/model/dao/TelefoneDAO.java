@@ -7,7 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import model.vo.Telefone;
+import model.entity.Cliente;
+import model.entity.Telefone;
 
 public class TelefoneDAO implements BaseDAO<Telefone> {
 
@@ -18,11 +19,15 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 		PreparedStatement stmt = Banco.getPreparedStatement(conn, sql, PreparedStatement.RETURN_GENERATED_KEYS);
 
 		try {
-			stmt.setString(1, novoTelefone.getCodgoPais());
-			stmt.setString(2, novoTelefone.getDDD());
+			stmt.setString(1, novoTelefone.getCodigoPais());
+			stmt.setString(2, novoTelefone.getDdd());
 			stmt.setString(3, novoTelefone.getNumero());
-			stmt.setString(4, novoTelefone.getTipo());
-			stmt.setInt(5, novoTelefone.getIdCliente());
+			stmt.setString(4, novoTelefone.getTipoLinha());
+
+			if (novoTelefone.getCliente() != null) {
+				stmt.setInt(5, novoTelefone.getCliente().getId());
+			}
+
 			stmt.setInt(6, novoTelefone.isAtivo() ? 1 : 0);
 			stmt.execute();
 
@@ -31,7 +36,6 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 				int idGerado = generatedKeys.getInt(1);
 				novoTelefone.setId(idGerado);
 			}
-
 		} catch (SQLException e) {
 			System.out.println("Erro ao inserir novo telefone.");
 			System.out.println("Erro: " + e.getMessage());
@@ -56,6 +60,47 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 		return quantidadeLinhasAfetadas > 0;
 	}
 
+	/**
+	 * Associa e ativa uma lista de telefones a um determinado cliente.
+	 * 
+	 * @param dono      o cliente que possui os telefones
+	 * @param telefones a lista de telefones
+	 */
+	public void ativarTelefones(Cliente dono, ArrayList<Telefone> telefones) {
+		for (Telefone t : telefones) {
+			t.setCliente(dono);
+			t.setAtivo(true);
+			if (t.getId() > 0) {
+				// UPDATE no Telefone
+				alterar(t);
+			} else {
+				// INSERT no Telefone
+				salvar(t);
+			}
+		}
+	}
+
+	/**
+	 * Desativa todos os telefones de um determinado cliente.
+	 * 
+	 * @param idCliente a chave primária do cliente
+	 */
+	public void desativarTelefones(int idCliente) {
+		Connection conn = Banco.getConnection();
+		String sql = " UPDATE TELEFONE " + " SET idCliente=0, ativo=0 " + " WHERE IDCLIENTE=? ";
+
+		PreparedStatement stmt = Banco.getPreparedStatement(conn, sql);
+		int quantidadeLinhasAfetadas = 0;
+
+		try {
+			stmt.setInt(1, idCliente);
+			quantidadeLinhasAfetadas = stmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println("Erro ao desativar telefone.");
+			System.out.println("Erro: " + e.getMessage());
+		}
+	}
+
 	public boolean alterar(Telefone telefone) {
 		Connection conn = Banco.getConnection();
 		String sql = " UPDATE TELEFONE " + " SET codigoPais=?, ddd=?, numero=?, tipoLinha=?, idCliente=?, ativo=? "
@@ -65,11 +110,15 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 		int quantidadeLinhasAfetadas = 0;
 
 		try {
-			stmt.setString(1, telefone.getCodgoPais());
-			stmt.setString(2, telefone.getDDD());
+			stmt.setString(1, telefone.getCodigoPais());
+			stmt.setString(2, telefone.getDdd());
 			stmt.setString(3, telefone.getNumero());
-			stmt.setString(4, telefone.getTipo());
-			stmt.setInt(5, telefone.getIdCliente());
+			stmt.setString(4, telefone.getTipoLinha());
+
+			if (telefone.getCliente() != null) {
+				stmt.setInt(5, telefone.getCliente().getId());
+			}
+
 			stmt.setInt(6, telefone.isAtivo() ? 1 : 0);
 			stmt.setInt(7, telefone.getId());
 			quantidadeLinhasAfetadas = stmt.executeUpdate();
@@ -126,16 +175,42 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 		return telefones;
 	}
 
+	public ArrayList<Telefone> consultarTodosPorIdCliente(int idCliente) {
+		Connection conn = Banco.getConnection();
+		String sql = " SELECT id, codigoPais, ddd, numero, tipoLinha, idCliente, ativo " + " FROM TELEFONE "
+				+ " WHERE IDCLIENTE = " + idCliente;
+
+		Statement stmt = Banco.getStatement(conn);
+		ArrayList<Telefone> telefones = new ArrayList<Telefone>();
+		try {
+			ResultSet resultadoDaConsulta = stmt.executeQuery(sql);
+
+			while (resultadoDaConsulta.next()) {
+				Telefone telefone = construirTelefoneDoResultSet(resultadoDaConsulta);
+				telefones.add(telefone);
+			}
+
+		} catch (SQLException e) {
+			System.out.println("Erro ao consultar telefones por idCliente. Idcliente: " + idCliente);
+			System.out.println("Erro: " + e.getMessage());
+		}
+
+		return telefones;
+	}
+
 	private Telefone construirTelefoneDoResultSet(ResultSet resultadoDaConsulta) {
 		Telefone telefone;
 		telefone = new Telefone();
 		try {
 			telefone.setId(resultadoDaConsulta.getInt("id"));
-			telefone.setIdCliente(resultadoDaConsulta.getInt("idCliente"));
-			telefone.setCodgoPais(resultadoDaConsulta.getString("codigoPais"));
-			telefone.setDDD(resultadoDaConsulta.getString("ddd"));
+
+			ClienteDAO cDAO = new ClienteDAO();
+			Cliente donoDoTelefone = cDAO.consultarPorId(resultadoDaConsulta.getInt("idCliente"));
+			telefone.setCliente(donoDoTelefone);
+			telefone.setCodigoPais(resultadoDaConsulta.getString("codigoPais"));
+			telefone.setDdd(resultadoDaConsulta.getString("ddd"));
 			telefone.setNumero(resultadoDaConsulta.getString("numero"));
-			telefone.setTipo(resultadoDaConsulta.getString("tipoLinha"));
+			telefone.setTipoLinha(resultadoDaConsulta.getString("tipoLinha"));
 			telefone.setAtivo(resultadoDaConsulta.getBoolean("ativo"));
 		} catch (SQLException e) {
 			System.out.println("Erro ao construir telefone a partir do ResultSet");
@@ -143,6 +218,32 @@ public class TelefoneDAO implements BaseDAO<Telefone> {
 		}
 
 		return telefone;
+	}
+
+	public boolean consultarTelefoneRepetido(Telefone novoTelefone) {
+
+		String sql = " SELECT ID FROM TELEFONE " + " WHERE DDD = " + novoTelefone.getDdd() + " and codigoPais = "
+				+ novoTelefone.getCodigoPais() + " and numero = " + novoTelefone.getNumero();
+		Connection conn = Banco.getConnection();
+		Statement stmt = Banco.getStatement(conn);
+
+		ResultSet rs = null;
+		boolean telefoneExiste = false;
+		try {
+			rs = stmt.executeQuery(sql);
+			telefoneExiste = rs.next();
+
+		} catch (SQLException e) {
+			System.out.println("Erro ao verificar telefone ");
+			System.out.println("Erro: " + e.getMessage());
+		} finally {
+			Banco.closeResultSet(rs);
+			Banco.closePreparedStatement(stmt);
+			Banco.closeConnection(conn);
+		}
+
+		return telefoneExiste;
 
 	}
+
 }
